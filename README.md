@@ -22,8 +22,8 @@ Para compilar, use o seguinte comando:
     g++ simula_vm.cc -o out
     ```
 
-Para executar o programa, use o comando abaixo, lembrando de mencionar o arquivo de entrada:
+Para executar o programa, é necessário passar a quantidade de quadros de memória e o nome do arquivo com a cadeia de referências, como mostrado no exemplo abaixo:
 
     ```sh
-    ./out nome_do_arquivo.txt
+    ./out 4 arquivo.txt
     ```
