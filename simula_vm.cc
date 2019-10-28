@@ -1,23 +1,21 @@
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <algorithm>
 #include <vector>
 
-using std::cerr, std::cout, std::endl, std::for_each, std::vector, std::pair;
+using std::cerr, std::cout, std::distance, std::endl, std::find, std::for_each, std::vector, std::pair;
 
 int qtdQuadros( const char* );
 pair<int, vector<int>> cadeiaDeReferencias( const char* );
-void imprime(int, int, int, int, int);
+void imprime(const vector<int>);
 
 class Simulador {
     public:
         Simulador( const int qtd_quadros, const int qtd_refs, const vector<int> refs ) : 
-        qtd_quadros(qtd_quadros), qtd_refs(qtd_refs), refs(refs)
-        {
-            memoria = vector<int>(qtd_quadros, -1);
-        }
+        qtd_quadros(qtd_quadros), qtd_refs(qtd_refs), refs(refs) {}
 
         int getQtdQuadros() const {
             return qtd_quadros;
@@ -28,47 +26,80 @@ class Simulador {
         }
 
         int fifo() {
+            vector<int> memoria(qtd_quadros, -1);
             int faltas_de_pagina, contador;
             faltas_de_pagina = contador = 0;
-
+            
             for( auto x: refs ) {
                 if(contador == qtd_quadros) {
                     contador = 0;
                 }
-                
-                if( naoEstaNaMemoria(x) ) {
+
+                if( naoEstaNaMemoria(x, memoria) ) {
                     memoria[contador] = x;
                     faltas_de_pagina++;
                     contador++;
                 }
             }
 
-            limparMemoria();
             return faltas_de_pagina;
         }
 
-        int opt() {
-
-            limparMemoria();
+        int lru() {
             return 0;
         }
 
-        int lru() {
+        int opt() {
+            vector<int> memoria(qtd_quadros, -1);
+            int faltas_de_pagina = 0;
 
-            limparMemoria();
-            return 0;
+            for( auto x = refs.begin(); x != refs.end(); x++ ) {
+                if( naoEstaNaMemoria(*x, memoria) ) {
+                    substituiMenosUsada(x, memoria, OPT);
+                    faltas_de_pagina++;
+                }
+            }
+
+            return faltas_de_pagina;
         }
 
     private:
         int qtd_quadros, qtd_refs;
-        vector<int> refs, memoria;
+        vector<int> refs;
+        const static bool OPT = 1, LRU = 0;
 
-        void limparMemoria() {
-            for_each( memoria.begin(), memoria.end(), []( auto x ){ x = -1; } );
+        bool naoEstaNaMemoria( const int valor, vector<int> const &memoria ) const {
+            return find(memoria.begin(), memoria.end(), valor) == memoria.end();
         }
 
-        bool naoEstaNaMemoria( int valor ) {
-            return std::find(memoria.begin(), memoria.end(), valor) == memoria.end();
+        void substituiMenosUsada( vector<int>::iterator &pagina, vector<int> &memoria, int algoritmo ) {
+            vector<int>::iterator troca, maior = pagina, achado, inicio, fim;
+
+            if( algoritmo == OPT ) {
+                inicio = pagina + 1;
+                fim = refs.end();
+            } else if( algoritmo == LRU ) {
+                inicio = refs.begin();
+                fim = pagina + 1;
+            } else {
+                cout << "Algoritmo indefinido (bug)" << endl;
+                exit(-4);
+            }
+
+            for( auto x = memoria.begin(); x < memoria.end(); x++ ) {
+                achado = find(inicio, fim, *x);
+                if( achado == refs.end() ) {
+                    troca = x;
+                    break;
+                }
+
+                if( distance(pagina, maior) < distance(pagina, achado) ) {
+                    maior = achado;
+                    troca = x;
+                }
+            }
+
+            *troca = *pagina;
         }
 };
 
@@ -84,7 +115,8 @@ int main( int argc, char* argv[] ) {
 
     auto rstd = Simulador( qtdQuadros(argv[1]), params.first, params.second );
 
-    imprime( rstd.getQtdQuadros(), rstd.getQtdRefs(), rstd.fifo(), rstd.lru(), rstd.opt() );
+
+    imprime( {rstd.getQtdQuadros(), rstd.getQtdRefs(), rstd.fifo(), rstd.lru(), rstd.opt()} );
 
     return 0;
 }
@@ -124,11 +156,11 @@ pair<int, vector<int>> cadeiaDeReferencias( const char* nome_arquivo ) {
     return pair<int, vector<int>> (qtd_refs, refs);
 }
 
-void imprime( int qtd_quadros, int qtd_refs, int pfs_fifo, int pfs_lru, int pfs_opt) {
-    cout << qtd_quadros << " quadros     "
-        << qtd_refs << " refs: "
-        << "FIFO:   " << pfs_fifo << " PFs, "
-        << "LRU:    " << pfs_lru << " PFs, "
-        << "OPT:    " << pfs_opt << " PFs"
+void imprime( const vector<int> params ) {
+    cout << params[0] << " quadros     "
+        << params[1] << " refs: "
+        << "FIFO:   " << params[2] << " PFs, "
+        << "LRU:    " << params[3] << " PFs, "
+        << "OPT:    " << params[4] << " PFs"
         << endl;
 }
