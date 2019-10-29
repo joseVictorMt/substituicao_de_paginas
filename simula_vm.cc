@@ -35,16 +35,16 @@ class Simulador {
             std::deque<int> memoria;
             int faltas_de_pagina = 0;
             
-            for( auto x: refs ) {
+            for( auto pag_atual: refs ) {
                 if(memoria.size() < qtd_quadros) {
-                    if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
-                        memoria.push_front(x);
+                    if( find(memoria.begin(), memoria.end(), pag_atual) == memoria.end() ) {
+                        memoria.push_front(pag_atual);
                         faltas_de_pagina++;
                     }
                 } else {
-                    if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
+                    if( find(memoria.begin(), memoria.end(), pag_atual) == memoria.end() ) {
                         memoria.pop_back();
-                        memoria.push_front(x);
+                        memoria.push_front(pag_atual);
                         faltas_de_pagina++;
                     }
                 }
@@ -94,8 +94,7 @@ class Simulador {
 
         int opt() {
             unordered_set<int> memoria;
-            int faltas_de_pagina = 0, troca;
-            vector<int>::iterator maior, local;
+            int faltas_de_pagina = 0;
 
             for( auto pag_atual = refs.begin(); pag_atual != refs.end(); pag_atual++ ) {
                 if( memoria.size() < qtd_quadros ) {
@@ -107,21 +106,22 @@ class Simulador {
 
                 else {
                     if ( memoria.find( *pag_atual ) == memoria.end() ) {
-                        maior = pag_atual;
-                        for( auto x : memoria ) {
-                            local = find(pag_atual+1, refs.end(), x);
-                            if( local == refs.end() ) {
-                                troca = x;
+                        int escolhida;
+                        vector<int>::iterator mais_demorada, prox_exec = pag_atual;
+                        for( auto pag_mem : memoria ) {
+                            prox_exec = find(pag_atual+1, refs.end(), pag_mem);
+                            if( prox_exec == refs.end() ) {
+                                escolhida = pag_mem;
                                 break;
                             }
 
-                            if( distance(pag_atual, maior) < distance(pag_atual, local) ) {
-                                maior = local;
-                                troca = x;
+                            if( distance(pag_atual, mais_demorada) < distance(pag_atual, prox_exec) ) {
+                                mais_demorada = prox_exec;
+                                escolhida = pag_mem;
                             }
                         }
 
-                        memoria.erase(troca);
+                        memoria.erase(escolhida);
                         memoria.insert(*pag_atual);
                         faltas_de_pagina++;
                     }
@@ -191,7 +191,7 @@ pair<int, vector<int>> cadeiaDeReferencias( const char* nome_arquivo ) {
 }
 
 void imprime( const vector<int> resultado ) {
-    cout << resultado[0] << " quadros     "
+    cout << resultado[0] << " quadros,     "
         << resultado[1] << " refs: "
         << "FIFO:   " << resultado[2] << " PFs, "
         << "LRU:    " << resultado[3] << " PFs, "
