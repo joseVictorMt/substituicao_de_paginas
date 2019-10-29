@@ -94,42 +94,37 @@ class Simulador {
 
         int opt() {
             unordered_set<int> memoria;
-            int faltas_de_pagina = 0;
-            vector<int>::iterator troca, maior, local;
+            int faltas_de_pagina = 0, troca;
+            vector<int>::iterator maior, local;
 
             for( auto pag_atual = refs.begin(); pag_atual != refs.end(); pag_atual++ ) {
-            //     if( memoria.size() < qtd_quadros ) {
-            //         if( memoria.find(*pag_atual) == memoria.end() ) {
-            //             memoria.insert(refs[i]);
-            //             faltas_de_pagina++;
-            //         }
-            //     } else {
-            //         if( memoria.find(*pag_atual) == memoria.end() ) {
-
-            //             if() {
-
-            //             }
-            //         }
-            //     }
-            // }
-                if( naoEstaNaMemoria(*pag_atual, memoria) ) {
-
-                    maior = pag_atual;
-                    for( auto pag_salva = memoria.begin(); pag_salva != memoria.end(); pag_salva++ ) {
-                        local = find(pag_atual+1, refs.end(), *pag_salva);
-                        if( local == refs.end() ) {
-                            troca = pag_salva;
-                            break;
-                        }
-
-                        if( distance(pag_atual, maior) < distance(pag_atual, local) ) {
-                            maior = local;
-                            troca = pag_salva;
-                        }
+                if( memoria.size() < qtd_quadros ) {
+                    if ( memoria.find( *pag_atual ) == memoria.end() ) {
+                        memoria.insert( *pag_atual );
+                        faltas_de_pagina++;
                     }
+                }
 
-                    *troca = *pag_atual;
-                    faltas_de_pagina++;
+                else {
+                    if ( memoria.find( *pag_atual ) == memoria.end() ) {
+                        maior = pag_atual;
+                        for( auto x : memoria ) {
+                            local = find(pag_atual+1, refs.end(), x);
+                            if( local == refs.end() ) {
+                                troca = x;
+                                break;
+                            }
+
+                            if( distance(pag_atual, maior) < distance(pag_atual, local) ) {
+                                maior = local;
+                                troca = x;
+                            }
+                        }
+
+                        memoria.erase(troca);
+                        memoria.insert(*pag_atual);
+                        faltas_de_pagina++;
+                    }
                 }
             }
 
