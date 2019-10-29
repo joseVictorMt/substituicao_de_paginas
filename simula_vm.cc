@@ -1,9 +1,10 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
-#include <algorithm>
+#include <unordered_set>
 #include <vector>
 
 using std::cerr, std::cout, std::distance, std::endl, std::find, std::for_each, std::vector, std::pair;
@@ -12,16 +13,18 @@ int qtdQuadros( const char* );
 pair<int, vector<int>> cadeiaDeReferencias( const char* );
 void imprime(const vector<int>);
 
+// -------------------------------------- Classe do Simulador --------------------------------------
+
 class Simulador {
     public:
         Simulador( const int qtd_quadros, const int qtd_refs, const vector<int> refs ) : 
         qtd_quadros(qtd_quadros), qtd_refs(qtd_refs), refs(refs) {}
 
-        int getQtdQuadros() const {
+        int pegaQtdQuadros() const {
             return qtd_quadros;
         }
 
-        int getQtdRefs() const {
+        int pegaQtdRefs() const {
             return qtd_refs;
         }
 
@@ -46,16 +49,68 @@ class Simulador {
         }
 
         int lru() {
-            return 0;
+            std::unordered_set<int> memoria;
+            std::unordered_map<int, int> val_indices;
+            int faltas_de_pagina = 0;
+
+            for ( int i = 0; i < refs.size(); i++ ) {
+
+                if ( memoria.size() < qtd_quadros ) {
+
+                    if ( memoria.find(refs[i]) == memoria.end() ) {
+                        memoria.insert(refs[i]);
+                        faltas_de_pagina++;
+                    }
+
+                    val_indices[refs[i]] = i;
+
+                } else {
+
+                    if ( memoria.find(refs[i]) == memoria.end() ) {
+                        int menos_usada = refs.size() + 1, val;
+                        for ( auto item = memoria.begin(); item != memoria.end(); item++ ) {
+                            if (val_indices[*item] < menos_usada) {
+                                menos_usada = val_indices[*item];
+                                val = *item;
+                            }
+                        }
+
+                        memoria.erase(val);
+                        memoria.insert(refs[i]);
+                        faltas_de_pagina++;
+                    }
+
+                    val_indices[refs[i]] = i;
+                } 
+            }
+
+            return faltas_de_pagina;
         }
 
         int opt() {
             vector<int> memoria(qtd_quadros, -1);
             int faltas_de_pagina = 0;
+            vector<int>::iterator troca, maior, local;
 
-            for( auto x = refs.begin(); x != refs.end(); x++ ) {
-                if( naoEstaNaMemoria(*x, memoria) ) {
-                    substituiMenosUsada(x, memoria, OPT);
+            for( auto pag_atual = refs.begin(); pag_atual != refs.end(); pag_atual++ ) {
+                
+                if( naoEstaNaMemoria(*pag_atual, memoria) ) {
+
+                    maior = pag_atual;
+                    for( auto pag_salva = memoria.begin(); pag_salva != memoria.end(); pag_salva++ ) {
+                        local = find(pag_atual+1, refs.end(), *pag_salva);
+                        if( local == refs.end() ) {
+                            troca = pag_salva;
+                            break;
+                        }
+
+                        if( distance(pag_atual, maior) < distance(pag_atual, local) ) {
+                            maior = local;
+                            troca = pag_salva;
+                        }
+                    }
+
+                    *troca = *pag_atual;
                     faltas_de_pagina++;
                 }
             }
@@ -68,38 +123,8 @@ class Simulador {
         vector<int> refs;
         const static bool OPT = 1, LRU = 0;
 
-        bool naoEstaNaMemoria( const int valor, vector<int> const &memoria ) const {
+        bool naoEstaNaMemoria( const int valor, const vector<int> &memoria ) const {
             return find(memoria.begin(), memoria.end(), valor) == memoria.end();
-        }
-
-        void substituiMenosUsada( vector<int>::iterator &pagina, vector<int> &memoria, int algoritmo ) {
-            vector<int>::iterator troca, maior = pagina, achado, inicio, fim;
-
-            if( algoritmo == OPT ) {
-                inicio = pagina + 1;
-                fim = refs.end();
-            } else if( algoritmo == LRU ) {
-                inicio = refs.begin();
-                fim = pagina + 1;
-            } else {
-                cout << "Algoritmo indefinido (bug)" << endl;
-                exit(-4);
-            }
-
-            for( auto x = memoria.begin(); x < memoria.end(); x++ ) {
-                achado = find(inicio, fim, *x);
-                if( achado == refs.end() ) {
-                    troca = x;
-                    break;
-                }
-
-                if( distance(pagina, maior) < distance(pagina, achado) ) {
-                    maior = achado;
-                    troca = x;
-                }
-            }
-
-            *troca = *pagina;
         }
 };
 
@@ -115,11 +140,12 @@ int main( int argc, char* argv[] ) {
 
     auto rstd = Simulador( qtdQuadros(argv[1]), params.first, params.second );
 
-
-    imprime( {rstd.getQtdQuadros(), rstd.getQtdRefs(), rstd.fifo(), rstd.lru(), rstd.opt()} );
+    imprime( {rstd.pegaQtdQuadros(), rstd.pegaQtdRefs(), rstd.fifo(), rstd.lru(), rstd.opt()} );
 
     return 0;
 }
+
+// -------------------------------------- Funções auxiliáres --------------------------------------
 
 int qtdQuadros( const char* qtd_quadros ) {
     int quadros;
@@ -156,11 +182,11 @@ pair<int, vector<int>> cadeiaDeReferencias( const char* nome_arquivo ) {
     return pair<int, vector<int>> (qtd_refs, refs);
 }
 
-void imprime( const vector<int> params ) {
-    cout << params[0] << " quadros     "
-        << params[1] << " refs: "
-        << "FIFO:   " << params[2] << " PFs, "
-        << "LRU:    " << params[3] << " PFs, "
-        << "OPT:    " << params[4] << " PFs"
+void imprime( const vector<int> resultado ) {
+    cout << resultado[0] << " quadros     "
+        << resultado[1] << " refs: "
+        << "FIFO:   " << resultado[2] << " PFs, "
+        << "LRU:    " << resultado[3] << " PFs, "
+        << "OPT:    " << resultado[4] << " PFs"
         << endl;
 }
