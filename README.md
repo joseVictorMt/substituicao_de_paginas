@@ -18,12 +18,9 @@ As instruções a seguir são para a execução deste programa via terminal de u
 
 Para compilar, use o seguinte comando:
 
-    ```sh
-    g++ simula_vm.cc -o out
-    ```
+    g++ simula_vm.cc -o out -std=c++17
+
 
 Para executar o programa, é necessário passar a quantidade de quadros de memória e o nome do arquivo com a cadeia de referências, como mostrado no exemplo abaixo:
 
-    ```sh
     ./out 4 arquivo.txt
-    ```

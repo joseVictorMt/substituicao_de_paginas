@@ -2,12 +2,15 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <deque>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-using std::cerr, std::cout, std::distance, std::endl, std::find, std::for_each, std::vector, std::pair;
+using std::cerr, std::cout, std::distance, std::endl, std::find;
+using std::for_each, std::unordered_set, std::vector, std::pair;
 
 int qtdQuadros( const char* );
 pair<int, vector<int>> cadeiaDeReferencias( const char* );
@@ -29,19 +32,21 @@ class Simulador {
         }
 
         int fifo() {
-            vector<int> memoria(qtd_quadros, -1);
-            int faltas_de_pagina, contador;
-            faltas_de_pagina = contador = 0;
+            std::deque<int> memoria;
+            int faltas_de_pagina = 0;
             
             for( auto x: refs ) {
-                if(contador == qtd_quadros) {
-                    contador = 0;
-                }
-
-                if( naoEstaNaMemoria(x, memoria) ) {
-                    memoria[contador] = x;
-                    faltas_de_pagina++;
-                    contador++;
+                if(memoria.size() < qtd_quadros) {
+                    if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
+                        memoria.push_front(x);
+                        faltas_de_pagina++;
+                    }
+                } else {
+                    if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
+                        memoria.pop_back();
+                        memoria.push_front(x);
+                        faltas_de_pagina++;
+                    }
                 }
             }
 
@@ -49,15 +54,15 @@ class Simulador {
         }
 
         int lru() {
-            std::unordered_set<int> memoria;
+            unordered_set<int> memoria;
             std::unordered_map<int, int> mem_indices;
             int faltas_de_pagina = 0;
 
-            for ( int i = 0; i < refs.size(); i++ ) {
+            for ( int i = 0; i < qtd_refs; i++ ) {
 
                 if ( memoria.size() < qtd_quadros ) {
 
-                    if ( memoria.find(refs[i]) == memoria.end() ) {
+                    if ( memoria.find( refs[i]) == memoria.end() ) {
                         memoria.insert(refs[i]);
                         faltas_de_pagina++;
                     }
@@ -67,15 +72,15 @@ class Simulador {
                 } else {
 
                     if ( memoria.find(refs[i]) == memoria.end() ) {
-                        int menos_usada = refs.size() + 1, val;
+                        int menos_usada_i = qtd_refs + 1, pag_menos_usada;
                         for ( auto pagina = memoria.begin(); pagina != memoria.end(); pagina++ ) {
-                            if (mem_indices[*pagina] < menos_usada) {
-                                menos_usada = mem_indices[*pagina];
-                                val = *pagina;
+                            if ( mem_indices[*pagina] < menos_usada_i ) {
+                                menos_usada_i = mem_indices[*pagina];
+                                pag_menos_usada = *pagina;
                             }
                         }
 
-                        memoria.erase(val);
+                        memoria.erase(pag_menos_usada);
                         memoria.insert(refs[i]);
                         faltas_de_pagina++;
                     }
@@ -88,12 +93,25 @@ class Simulador {
         }
 
         int opt() {
-            vector<int> memoria(qtd_quadros, -1);
+            unordered_set<int> memoria;
             int faltas_de_pagina = 0;
             vector<int>::iterator troca, maior, local;
 
             for( auto pag_atual = refs.begin(); pag_atual != refs.end(); pag_atual++ ) {
-                
+            //     if( memoria.size() < qtd_quadros ) {
+            //         if( memoria.find(*pag_atual) == memoria.end() ) {
+            //             memoria.insert(refs[i]);
+            //             faltas_de_pagina++;
+            //         }
+            //     } else {
+            //         if( memoria.find(*pag_atual) == memoria.end() ) {
+
+            //             if() {
+
+            //             }
+            //         }
+            //     }
+            // }
                 if( naoEstaNaMemoria(*pag_atual, memoria) ) {
 
                     maior = pag_atual;
@@ -121,10 +139,6 @@ class Simulador {
     private:
         int qtd_quadros, qtd_refs;
         vector<int> refs;
-
-        bool naoEstaNaMemoria( const int valor, const vector<int> &memoria ) const {
-            return find(memoria.begin(), memoria.end(), valor) == memoria.end();
-        }
 };
 
 int main( int argc, char* argv[] ) {
