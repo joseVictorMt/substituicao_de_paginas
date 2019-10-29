@@ -50,7 +50,7 @@ class Simulador {
 
         int lru() {
             std::unordered_set<int> memoria;
-            std::unordered_map<int, int> val_indices;
+            std::unordered_map<int, int> mem_indices;
             int faltas_de_pagina = 0;
 
             for ( int i = 0; i < refs.size(); i++ ) {
@@ -62,16 +62,16 @@ class Simulador {
                         faltas_de_pagina++;
                     }
 
-                    val_indices[refs[i]] = i;
+                    mem_indices[refs[i]] = i;
 
                 } else {
 
                     if ( memoria.find(refs[i]) == memoria.end() ) {
                         int menos_usada = refs.size() + 1, val;
-                        for ( auto item = memoria.begin(); item != memoria.end(); item++ ) {
-                            if (val_indices[*item] < menos_usada) {
-                                menos_usada = val_indices[*item];
-                                val = *item;
+                        for ( auto pagina = memoria.begin(); pagina != memoria.end(); pagina++ ) {
+                            if (mem_indices[*pagina] < menos_usada) {
+                                menos_usada = mem_indices[*pagina];
+                                val = *pagina;
                             }
                         }
 
@@ -80,7 +80,7 @@ class Simulador {
                         faltas_de_pagina++;
                     }
 
-                    val_indices[refs[i]] = i;
+                    mem_indices[refs[i]] = i;
                 } 
             }
 
@@ -121,7 +121,6 @@ class Simulador {
     private:
         int qtd_quadros, qtd_refs;
         vector<int> refs;
-        const static bool OPT = 1, LRU = 0;
 
         bool naoEstaNaMemoria( const int valor, const vector<int> &memoria ) const {
             return find(memoria.begin(), memoria.end(), valor) == memoria.end();
