@@ -15,13 +15,13 @@ using std::for_each, std::unordered_map, std::unordered_set, std::vector, std::p
 
 int qtdQuadros( const char* );
 pair<int, vector<int>> cadeiaDeReferencias( const char* );
-void imprime(const vector<int>);
+void imprime( const vector<int>& );
 
 // -------------------------------------- Classe do Simulador --------------------------------------
 
 class Simulador {
     public:
-        Simulador( const int qtd_quadros, const int qtd_refs, const vector<int> refs ) : 
+        Simulador( const int &qtd_quadros, const int &qtd_refs, const vector<int> &refs ) : 
         qtd_quadros(qtd_quadros), qtd_refs(qtd_refs), refs(refs) {}
 
         int pegaQtdQuadros() const {
@@ -42,6 +42,7 @@ class Simulador {
                         memoria.push_front(x);
                         faltas_de_pagina++;
                     }
+
                 } else {
                     if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
                         memoria.pop_back();
@@ -63,7 +64,7 @@ class Simulador {
 
                 if ( memoria.size() < qtd_quadros ) {
 
-                    if ( memoria.find( refs[i]) == memoria.end() ) {
+                    if ( memoria.find( refs[i] ) == memoria.end() ) {
                         memoria.insert(refs[i]);
                         faltas_de_pagina++;
                     }
@@ -107,9 +108,7 @@ class Simulador {
                         memoria.insert( refs[i] );
                     }
 
-                }
-
-                else {
+                } else {
                     
                     if ( memoria.find( refs[i] ) == memoria.end() ) {
                         faltas_de_pagina++;
@@ -146,7 +145,7 @@ class Simulador {
         vector<int> refs;
 
 
-        auto mapaDeMomentos() -> unordered_map<int, std::queue<int>> {
+        auto mapaDeMomentos() -> unordered_map< int, std::queue<int> > {
             unordered_map<int, std::queue<int>> momentos_de_exec;
             for( int i = 0; i < qtd_refs; ++i ) {
                 momentos_de_exec[refs[i]].push(i);
@@ -188,7 +187,7 @@ int qtdQuadros( const char* qtd_quadros ) {
     return quadros;
 }
 
-pair<int, vector<int>> cadeiaDeReferencias( const char* nome_arquivo ) {
+auto cadeiaDeReferencias( const char* nome_arquivo ) -> pair< int, vector<int> > {
 
     std::ifstream arquivo (nome_arquivo);
     if( !arquivo.is_open() ) {
@@ -207,10 +206,10 @@ pair<int, vector<int>> cadeiaDeReferencias( const char* nome_arquivo ) {
     refs.resize(qtd_refs);
     arquivo.close();
 
-    return pair<int, vector<int>> (qtd_refs, refs);
+    return { qtd_refs, refs };
 }
 
-void imprime( const vector<int> resultado ) {
+void imprime( const vector<int> &resultado ) {
     cout << resultado[0] << " quadros,     "
         << resultado[1] << " refs: "
         << "FIFO:   " << resultado[2] << " PFs, "
