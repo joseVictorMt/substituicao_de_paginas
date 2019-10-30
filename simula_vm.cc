@@ -155,6 +155,8 @@ class Simulador {
         }
 };
 
+// ------------------------------------------ Função main ------------------------------------------
+
 int main( int argc, char* argv[] ) {
     
     if( argc <= 2 ) {
@@ -163,7 +165,7 @@ int main( int argc, char* argv[] ) {
         exit(-1);
     }
 
-    pair<int, vector<int>> params = cadeiaDeReferencias( argv[2] );
+    auto params = cadeiaDeReferencias( argv[2] );
 
     auto rstd = Simulador( qtdQuadros(argv[1]), params.first, params.second );
 
