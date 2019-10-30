@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iterator>
 #include <deque>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -10,7 +11,7 @@
 #include <vector>
 
 using std::cerr, std::cout, std::distance, std::endl, std::find;
-using std::for_each, std::unordered_set, std::vector, std::pair;
+using std::for_each, std::unordered_map, std::unordered_set, std::vector, std::pair;
 
 int qtdQuadros( const char* );
 pair<int, vector<int>> cadeiaDeReferencias( const char* );
@@ -35,16 +36,16 @@ class Simulador {
             std::deque<int> memoria;
             int faltas_de_pagina = 0;
             
-            for( auto pag_atual: refs ) {
+            for( auto x: refs ) {
                 if(memoria.size() < qtd_quadros) {
-                    if( find(memoria.begin(), memoria.end(), pag_atual) == memoria.end() ) {
-                        memoria.push_front(pag_atual);
+                    if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
+                        memoria.push_front(x);
                         faltas_de_pagina++;
                     }
                 } else {
-                    if( find(memoria.begin(), memoria.end(), pag_atual) == memoria.end() ) {
+                    if( find(memoria.begin(), memoria.end(), x) == memoria.end() ) {
                         memoria.pop_back();
-                        memoria.push_front(pag_atual);
+                        memoria.push_front(x);
                         faltas_de_pagina++;
                     }
                 }
@@ -95,45 +96,64 @@ class Simulador {
         int opt() {
             unordered_set<int> memoria;
             int faltas_de_pagina = 0;
+            auto momento_de_exec = mapaDeMomentos();
 
-            for( auto pag_atual = refs.begin(); pag_atual != refs.end(); pag_atual++ ) {
-                if( memoria.size() < qtd_quadros ) {
-                    if ( memoria.find( *pag_atual ) == memoria.end() ) {
-                        memoria.insert( *pag_atual );
+            for( int i = 0; i < qtd_refs; i++ ) {
+
+                if ( memoria.size() < qtd_quadros ) {
+                    
+                    if ( memoria.find( refs[i] ) == memoria.end() ) {
                         faltas_de_pagina++;
+                        memoria.insert( refs[i] );
                     }
+
                 }
 
                 else {
-                    if ( memoria.find( *pag_atual ) == memoria.end() ) {
-                        int escolhida;
-                        vector<int>::iterator mais_demorada, prox_exec = pag_atual;
-                        for( auto pag_mem : memoria ) {
-                            prox_exec = find(pag_atual+1, refs.end(), pag_mem);
-                            if( prox_exec == refs.end() ) {
-                                escolhida = pag_mem;
+                    
+                    if ( memoria.find( refs[i] ) == memoria.end() ) {
+                        faltas_de_pagina++;
+
+                        int mais_tardio = 0, escolhida;
+                        for( auto mem_pag : memoria ) {
+                            if ( momento_de_exec[mem_pag].empty() ) {
+                                escolhida = mem_pag;
                                 break;
                             }
-
-                            if( distance(pag_atual, mais_demorada) < distance(pag_atual, prox_exec) ) {
-                                mais_demorada = prox_exec;
-                                escolhida = pag_mem;
+                            
+                            else if( mais_tardio < momento_de_exec[mem_pag].front() ) {
+                                escolhida = mem_pag;
+                                mais_tardio = momento_de_exec[mem_pag].front();
                             }
                         }
 
                         memoria.erase(escolhida);
-                        memoria.insert(*pag_atual);
-                        faltas_de_pagina++;
+                        memoria.insert( refs[i] );
                     }
+
+                }
+
+                if( !momento_de_exec[refs[i]].empty() && momento_de_exec[refs[i]].front() == i) {
+                    momento_de_exec[refs[i]].pop();
                 }
             }
-
+            
             return faltas_de_pagina;
         }
 
     private:
         int qtd_quadros, qtd_refs;
         vector<int> refs;
+
+
+        auto mapaDeMomentos() -> unordered_map<int, std::queue<int>> {
+            unordered_map<int, std::queue<int>> momentos_de_exec;
+            for( int i = 0; i < qtd_refs; ++i ) {
+                momentos_de_exec[refs[i]].push(i);
+            }
+
+            return momentos_de_exec;
+        }
 };
 
 int main( int argc, char* argv[] ) {
